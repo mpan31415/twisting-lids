@@ -67,7 +67,7 @@ class FrankaEnvInitializer(EnvInitializer):
 
         # Pose [px, py, pz, qx, qy, qz, qw]
         # MY TODO: adjust the hand base init pose accordingly
-        self.hand_base_init_pose = Pose([0.0, 0.0, 1.0], [0, 0, -0.7071068, 0.7071068])
+        self.hand_base_init_pose = Pose([-0.2, 0.0, 0.5], [0, 0, -0.7071068, 0.7071068]).post_multiply_euler("z", [90])
 
         # MY TODO: adjut the cube init pose accordingly
         self.cube_base_init_pose = Pose(
@@ -79,8 +79,22 @@ class FrankaEnvInitializer(EnvInitializer):
     def get_franka_base_init_pos(self):
 
         # TODO: fine-tune this accordingly
-        left_franka_init_qpos = [math.pi/8, 0.0, 0.0, -5*math.pi/8, 0.0, 7*math.pi/8, -math.pi/4]
-        right_franka_init_qpos = [-math.pi/8, 0.0, 0.0, -5*math.pi/8, 0.0, 7*math.pi/8, 3*math.pi/4]
+        left_franka_init_qpos = [math.pi/16, 
+                                    math.pi/9, 
+                                    0.0, 
+                                    -9*math.pi/16, 
+                                    -3*math.pi/16 + math.pi/2, 
+                                    5*math.pi/8 - math.pi/64, 
+                                    -math.pi
+                                    ]
+        right_franka_init_qpos = [-math.pi/16, 
+                                    math.pi/9, 
+                                    0.0, 
+                                    -9*math.pi/16, 
+                                    3*math.pi/16 - math.pi/2, 
+                                    5*math.pi/8 - math.pi/64, 
+                                    -math.pi/2
+                                    ]
 
         return left_franka_init_qpos + right_franka_init_qpos
     
