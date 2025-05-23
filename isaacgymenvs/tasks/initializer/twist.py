@@ -4,42 +4,74 @@ from isaacgym import gymutil, gymtorch, gymapi
 from scipy.spatial.transform import Rotation as R
 from isaacgymenvs.tasks.initializer.base import EnvInitializer, Pose
 
+import math
+
 
 class Jan8EnvInitializer(EnvInitializer):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        print("="*50)
+        print("Jan8EnvInitializer")
+        print("="*50)
         # Hand QPos
         self.cfg = kwargs.get("cfg")
         left_hand_init_qpos = {
+            # left ring finger
+            "joint_l__0.0": -0.008,
+            "joint_l_1.0": 0.9478,
+            "joint_l_2.0": 0.6420,
+            "joint_l_3.0": -0.0330,
+            # left thumb
+            "joint_l_12.0": 0.667,  # 0.600,
+            "joint_l_13.0": 1.167,  # 1.1630,
+            "joint_l_14.0": 0.75,  # 1.000,
+            "joint_l_15.0": 0.45,  # 0.480,
+            # left middle finger
+            "joint_l_4.0": 0.0530,
+            "joint_l_5.0": 0.7163,
+            "joint_l_6.0": 0.9606,
+            "joint_l_7.0": 0.0000,
+            # left index finger
+            "joint_l_8.0": 0.0000,
+            "joint_l_9.0": 0.7811,
+            "joint_l_10.0": 0.7868,
+            "joint_l_11.0": 0.3454,
+        }
+        right_hand_init_qpos = {
+            # right index finger
             "joint_0.0": -0.008,
             "joint_1.0": 0.9478,
             "joint_2.0": 0.6420,
             "joint_3.0": -0.0330,
+            # right thumb
             "joint_12.0": 0.667,  # 0.600,
             "joint_13.0": 1.167,  # 1.1630,
             "joint_14.0": 0.75,  # 1.000,
             "joint_15.0": 0.45,  # 0.480,
+            # right middle finger
             "joint_4.0": 0.0530,
             "joint_5.0": 0.7163,
             "joint_6.0": 0.9606,
             "joint_7.0": 0.0000,
+            # right ring finger
             "joint_8.0": 0.0000,
             "joint_9.0": 0.7811,
             "joint_10.0": 0.7868,
             "joint_11.0": 0.3454,
         }
-        right_hand_init_qpos = {}
-        for k, v in left_hand_init_qpos.items():
-            right_hand_init_qpos[k + "_r"] = v
         self.hand_init_qpos = {**left_hand_init_qpos, **right_hand_init_qpos}
 
         self.dof_velocity = 1.0
 
         # Pose [px, py, pz, qx, qy, qz, qw]
+        # MY TODO: adjust the hand base init pose accordingly
         self.hand_base_init_pose = Pose([0.0, 0.0, 1.0], [0, 0, -0.7071068, 0.7071068])
+
+        # MY TODO: adjut the cube init pose accordingly
         self.cube_base_init_pose = Pose(
             [0.70, -0.03, 1.24], [0, -0.7071068, 0, 0.7071068]
         ).post_multiply_euler("z", [-90])
+        
         return
 
     def get_ur_base_init_pos(self):
@@ -60,6 +92,15 @@ class Jan8EnvInitializer(EnvInitializer):
             -0.8824575583087366,
             -0.06327754655946904,
         ]
+    
+    def get_franka_base_init_pos(self):
+
+        # TODO: fine-tune this accordingly
+        left_franka_init_qpos = [math.pi/8, 0.0, 0.0, -5*math.pi/8, 0.0, 7*math.pi/8, -math.pi/4]
+        right_franka_init_qpos = [-math.pi/8, 0.0, 0.0, -5*math.pi/8, 0.0, 7*math.pi/8, 3*math.pi/4]
+
+        return left_franka_init_qpos + right_franka_init_qpos
+    
 
     def initialize_object_dof(self, cube_dof_props):
         # print(cube_dof_props)

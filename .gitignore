@@ -1,2 +1,4 @@
 *.pyc
 *.egg-info
+
+/assets/urdf/franka_description_tmr/

@@ -199,16 +199,18 @@ class DualFrankaBottle(VecTask):
             self.use_reward_obs = False
 
         # this task is designed for controlling both arm and hand
-        # 2 x 16 hand and 2 x 6 arm
-        self.whole_ur_hand_control = False
-        self.cfg["env"]["numActions"] = 44 if self.whole_ur_hand_control else 32
+        # 2 x 16 hand and 2 x 7 arm
+        self.whole_franka_hand_control = False
+        self.cfg["env"]["numActions"] = 46 if self.whole_franka_hand_control else 32
         self.total_hand_dof = 32
-        self.total_arm_dof = 12
+        self.total_arm_dof = 14
+        self.num_base_dofs = 12
 
         # Values to be filled in at runtime
         self.states = {}  # will be dict filled with relevant states to use for reward calculation
         self.handles = {}  # will be dict mapping names to relevant sim handles
-        self.num_dofs = None  # Total number of DOFs per env
+        self.num_dofs_with_base = None  # Total number of DOFs per env
+        self.num_dofs = None  # Total number of ACTUATED DOFs per env
         self.actions = None  # Current actions to be deployed
         self._init_cube_state = None  # Initial state of cube for the current env
         self.cube_id = None  # Actor ID corresponding to cube for a given env
@@ -274,8 +276,8 @@ class DualFrankaBottle(VecTask):
 
         # set up default hand initialization.
         self.hand_default_dof_pos = torch.zeros(self.total_hand_dof, device=self.device)
-        self.ur_default_dof_pos = to_torch(
-            self.initializer.get_ur_base_init_pos(),
+        self.franka_default_dof_pos = to_torch(
+            self.initializer.get_franka_base_init_pos(),
             device=self.device,
         )
         self._post_init()
@@ -358,8 +360,8 @@ class DualFrankaBottle(VecTask):
             print("Hand QPos Overriding: Idx:{} QPos: {}".format(idx, qpos))
             self.hand_default_dof_pos[i] = qpos
         for i, (idx, qpos) in enumerate(self.hand_default_qpos_info[32:]):
-            print("UR QPos Overriding: Idx:{} QPos: {}".format(idx, qpos))
-            self.ur_default_dof_pos[i] = qpos
+            print("Franka QPos Overriding: Idx:{} QPos: {}".format(idx, qpos))
+            self.franka_default_dof_pos[i] = qpos
 
         self.cube_init_pose = to_torch(
             self.initializer.get_cube_init_pose().to_list(),
@@ -525,23 +527,23 @@ class DualFrankaBottle(VecTask):
         self.gym.refresh_actor_root_state_tensor(self.sim)
         self.gym.refresh_dof_state_tensor(self.sim)
         self.gym.refresh_rigid_body_state_tensor(self.sim)
-        self.hand_dof_state = self._dof_state.view(self.num_envs, -1, 2)[
-            :,
-            self.allegro_dof_handles,
-        ]
+
+        self.hand_dof_state = self._dof_state.view(self.num_envs, -1, 2)[:, self.allegro_dof_handles]
         self.hand_dof_pos = self.hand_dof_state[..., 0]
         self.hand_dof_vel = self.hand_dof_state[..., 1]
-        self.ur_dof_state = self._dof_state.view(self.num_envs, -1, 2)[
-            :, self.ur_dof_handles
-        ]
-        self.ur_dof_pos = self.ur_dof_state[..., 0]
-        self.ur_dof_vel = self.ur_dof_state[..., 1]
+
+        self.franka_dof_state = self._dof_state.view(self.num_envs, -1, 2)[:, self.franka_dof_handles]
+        self.franka_dof_pos = self.franka_dof_state[..., 0]
+        self.franka_dof_vel = self.franka_dof_state[..., 1]
 
         # refresh states
         self._update_states()
 
 
     def _create_camera(self, env_ptr):
+        print("---------------------------------------------------------------------------------------")
+        print("                                  Creating Camera")
+        print("---------------------------------------------------------------------------------------")
         cam_props = gymapi.CameraProperties()
         cam_props.width = self.cam_w
         cam_props.height = self.cam_h
@@ -581,6 +583,9 @@ class DualFrankaBottle(VecTask):
         # --------------------------------------------------------------------------------------
         #                                   Load Assets
         # --------------------------------------------------------------------------------------
+        print("--------------------------------------------------------------------------------------")
+        print("                                  Load Assets")
+        print("--------------------------------------------------------------------------------------")
         asset_root = os.path.join(
             os.path.dirname(os.path.abspath(__file__)), "../../assets"
         )
@@ -588,7 +593,7 @@ class DualFrankaBottle(VecTask):
         if self.use_mirrored_urdf:
             asset_file = "urdf/ur5e_allegro/robots/dual_ur5e_allegro.urdf"
         elif self.use_updated_urdf:
-            asset_file = "urdf/ur5e_allegro/robots/dual_ur5e_allegro_real_v2.urdf"
+            asset_file = "urdf/franka_description_tmr/urdf/franka_right_digit360_simple.urdf"      # True
         else:
             asset_file = "urdf/ur5e_allegro/robots/dual_ur5e_allegro_real.urdf"
 
@@ -612,56 +617,36 @@ class DualFrankaBottle(VecTask):
             asset_options.use_physx_armature = True
         asset_options.default_dof_drive_mode = gymapi.DOF_MODE_POS
 
-        dual_ur_allegro_asset = self.gym.load_asset(
+        dual_franka_allegro_asset = self.gym.load_asset(
             self.sim, asset_root, asset_file, asset_options
         )
 
-        allegro_dof_names = [
-            "joint_0.0",
-            "joint_1.0",
-            "joint_2.0",
-            "joint_3.0",
-            "joint_12.0",
-            "joint_13.0",
-            "joint_14.0",
-            "joint_15.0",
-            "joint_4.0",
-            "joint_5.0",
-            "joint_6.0",
-            "joint_7.0",
-            "joint_8.0",
-            "joint_9.0",
-            "joint_10.0",
-            "joint_11.0",
-        ]
-        allegro_dof_names = allegro_dof_names + [
-            dof_name + "_r" for dof_name in allegro_dof_names
-        ]
-        ur_dof_names = [
-            "shoulder_pan_joint",
-            "shoulder_lift_joint",
-            "elbow_joint",
-            "wrist_1_joint",
-            "wrist_2_joint",
-            "wrist_3_joint",
-        ]
-        ur_dof_names = ur_dof_names + [dof_name + "_r" for dof_name in ur_dof_names]
+        left_allegro_dof_names = [f"joint_l_{i}.0" for i in [12, 13, 14, 15, 4, 5, 6, 7, 8, 9, 10, 11, "_0", 1, 2, 3]]
+        right_allegro_dof_names = [f"joint_{i}.0" for i in [0, 1, 2, 3, 12, 13, 14, 15, 4, 5, 6, 7, 8, 9, 10, 11]]
+        allegro_dof_names = left_allegro_dof_names + right_allegro_dof_names
+
+        left_franka_dof_names = [f"left_fr3_joint{i}" for i in range(1, 8)]
+        right_franka_dof_names = [f"right_fr3_joint{i}" for i in range(1, 8)]
+        franka_dof_names = left_franka_dof_names + right_franka_dof_names
+
         self.allegro_dof_handles = to_torch(
             [
-                self.gym.find_asset_dof_index(dual_ur_allegro_asset, allegro_dof_name)
+                self.gym.find_asset_dof_index(dual_franka_allegro_asset, allegro_dof_name)
                 for allegro_dof_name in allegro_dof_names
             ],
             dtype=torch.long,
             device=self.device,
         )
-        self.ur_dof_handles = to_torch(
+        self.franka_dof_handles = to_torch(
             [
-                self.gym.find_asset_dof_index(dual_ur_allegro_asset, ur_dof_name)
-                for ur_dof_name in ur_dof_names
+                self.gym.find_asset_dof_index(dual_franka_allegro_asset, franka_dof_name)
+                for franka_dof_name in franka_dof_names
             ],
             dtype=torch.long,
             device=self.device,
         )
+        print("Allegro DOF Handles: ", self.allegro_dof_handles)
+        print("Franka DOF Handles: ", self.franka_dof_handles)
 
         # Load Cube Assets
         bottle_asset_options = gymapi.AssetOptions()
@@ -677,32 +662,36 @@ class DualFrankaBottle(VecTask):
         # --------------------------------------------------------------------------------------
         #                                   Setup Both Hands
         # --------------------------------------------------------------------------------------
+        print("--------------------------------------------------------------------------------------")
+        print("                                  Setup Both Hands")
+        print("--------------------------------------------------------------------------------------")
 
         self.num_allegro_bodies = self.gym.get_asset_rigid_body_count(
-            dual_ur_allegro_asset
+            dual_franka_allegro_asset
         )
-        self.num_allegro_dofs = self.gym.get_asset_dof_count(dual_ur_allegro_asset)
+        self.num_allegro_dofs = self.gym.get_asset_dof_count(dual_franka_allegro_asset)
 
         print("num Allegro Bodies: ", self.num_allegro_bodies)
         print("num Allegro Dofs: ", self.num_allegro_dofs)
 
         # set franka dof properties
-        allegro_dof_props = self.gym.get_asset_dof_properties(dual_ur_allegro_asset)
+        allegro_dof_props = self.gym.get_asset_dof_properties(dual_franka_allegro_asset)
 
+        # MY TODO: is it required to change the thumb joint 3 limits?
         if self.use_real_allegro_limit:
-            print("Change lower limit of joint14 at index 12,34 according to init")
-            allegro_dof_props["lower"][12] = self.initializer.hand_init_qpos[
-                "joint_14.0"
+            print("Change lower limit of thumb joint 3, which is at indices 21,48 according to loaded asset")
+            allegro_dof_props["lower"][21] = self.initializer.hand_init_qpos[
+                "joint_l_14.0"
             ]
-            allegro_dof_props["lower"][34] = self.initializer.hand_init_qpos[
-                "joint_14.0_r"
+            allegro_dof_props["lower"][48] = self.initializer.hand_init_qpos[
+                "joint_14.0"
             ]
 
         self.hand_dof_upper_limits = []
         self.hand_dof_lower_limits = []
 
         # we only set hand dof properties, arm property is inheritied from URDF
-        for i in self.ur_dof_handles:
+        for i in self.franka_dof_handles:
             allegro_dof_props["driveMode"][i] = gymapi.DOF_MODE_POS
 
         for i in self.allegro_dof_handles:
@@ -722,6 +711,16 @@ class DualFrankaBottle(VecTask):
 
             self.hand_dof_lower_limits.append(allegro_dof_props["lower"][i])
             self.hand_dof_upper_limits.append(allegro_dof_props["upper"][i])
+        
+        # disable control of all 12 base DOFs
+        for i in range(self.num_base_dofs):
+            allegro_dof_props["driveMode"][i] = gymapi.DOF_MODE_NONE
+            allegro_dof_props["stiffness"][i] = 0.0
+            allegro_dof_props["damping"][i] = 0.0
+            allegro_dof_props["friction"][i] = 0.0
+            allegro_dof_props["armature"][i] = 0.0
+
+        print("Allegro DOF Control Modes: ", allegro_dof_props["driveMode"])
 
         self.hand_dof_upper_limits = to_torch(
             self.hand_dof_upper_limits, device=self.device
@@ -729,7 +728,9 @@ class DualFrankaBottle(VecTask):
         self.hand_dof_lower_limits = to_torch(
             self.hand_dof_lower_limits, device=self.device
         )
-        self.allegro_dof_speed_scales = torch.ones_like(self.hand_dof_lower_limits)
+
+        # COMMENT OUT to avoid pytorch error locally (this is also UNUSED?)
+        # self.allegro_dof_speed_scales = torch.ones_like(self.hand_dof_lower_limits)
 
         allegro_start_pose = (
             self.initializer.get_hand_base_init_pose().to_isaacgym_pose()
@@ -748,11 +749,11 @@ class DualFrankaBottle(VecTask):
 
         # compute aggregate size
         num_hand_bodies = (
-            self.gym.get_asset_rigid_body_count(dual_ur_allegro_asset)
+            self.gym.get_asset_rigid_body_count(dual_franka_allegro_asset)
             + object_asset_manager.get_asset_rigid_body_count()
         )
         num_hand_shapes = (
-            self.gym.get_asset_rigid_shape_count(dual_ur_allegro_asset)
+            self.gym.get_asset_rigid_shape_count(dual_franka_allegro_asset)
             + object_asset_manager.get_asset_rigid_shape_count()
         )
         max_agg_bodies = num_hand_bodies + 3  # 1 for table, table stand, cube
@@ -775,6 +776,9 @@ class DualFrankaBottle(VecTask):
         self.env_camera_handles = []
         self.env_physics_setup = []
 
+        print("--------------------------------------------------------------------------------------")
+        print(f"                         Creating {self.num_envs} Envs")
+        print("--------------------------------------------------------------------------------------")
         for i in range(self.num_envs):
             # create env instance
             env_ptr = self.gym.create_env(self.sim, lower, upper, num_per_row)
@@ -787,7 +791,7 @@ class DualFrankaBottle(VecTask):
             # Create hand actor
             allegro_actor = self.gym.create_actor(
                 env_ptr,
-                dual_ur_allegro_asset,
+                dual_franka_allegro_asset,
                 allegro_start_pose,
                 "allegro",
                 i,
@@ -866,8 +870,12 @@ class DualFrankaBottle(VecTask):
             self.envs.append(env_ptr)
             self.allegro.append(allegro_actor)
 
-            if self.enable_camera_sensors:
+            if self.enable_camera_sensors:    # False
                 self._create_camera(env_ptr)
+
+        print("--------------------------------------------------------------------------------------")
+        print("                               Finished Creating Envs")
+        print("--------------------------------------------------------------------------------------")
 
         self.brake_joint_id = self.gym.find_actor_dof_handle(
             env_ptr, cube_actor, "brake_joint"
@@ -876,22 +884,24 @@ class DualFrankaBottle(VecTask):
             env_ptr, cube_actor, "b_joint"
         )
 
-        tip_names = ["link_7.0_tip", "link_15.0_tip", "link_3.0_tip", "link_11.0_tip"]
-        nonthumb_tip_names = ["link_7.0_tip", "link_3.0_tip", "link_11.0_tip"]
-        thumb_tip_names = ["link_15.0_tip"]
+        left_tip_names = ["link_l15.0_tip", "link_l7.0_tip", "link_l11.0_tip", "link_l3.0_tip"]
+        left_nonthumb_tip_names = ["link_l7.0_tip", "link_l11.0_tip", "link_l3.0_tip"]
+        left_thumb_tip_names = ["link_l15.0_tip"]
+
+        right_tip_names = ["link_3.0_tip", "link_15.0_tip", "link_7.0_tip", "link_11.0_tip"]
+        right_nonthumb_tip_names = ["link_3.0_tip", "link_7.0_tip", "link_11.0_tip"]
+        right_thumb_tip_names = ["link_15.0_tip"]
 
         self.left_tip_handles = [
             self.gym.find_actor_rigid_body_handle(env_ptr, allegro_actor, tip_name)
-            for tip_name in tip_names
+            for tip_name in left_tip_names
         ]
         self.left_tip_handles = to_torch(
             self.left_tip_handles, dtype=torch.long, device=self.device
         )
         self.right_tip_handles = [
-            self.gym.find_actor_rigid_body_handle(
-                env_ptr, allegro_actor, tip_name + "_r"
-            )
-            for tip_name in tip_names
+            self.gym.find_actor_rigid_body_handle(env_ptr, allegro_actor, tip_name)
+            for tip_name in right_tip_names
         ]
         self.right_tip_handles = to_torch(
             self.right_tip_handles, dtype=torch.long, device=self.device
@@ -899,16 +909,14 @@ class DualFrankaBottle(VecTask):
 
         self.left_thumb_tip_handles = [
             self.gym.find_actor_rigid_body_handle(env_ptr, allegro_actor, tip_name)
-            for tip_name in thumb_tip_names
+            for tip_name in left_thumb_tip_names
         ]
         self.left_thumb_tip_handles = to_torch(
             self.left_thumb_tip_handles, dtype=torch.long, device=self.device
         )
         self.right_thumb_tip_handles = [
-            self.gym.find_actor_rigid_body_handle(
-                env_ptr, allegro_actor, tip_name + "_r"
-            )
-            for tip_name in thumb_tip_names
+            self.gym.find_actor_rigid_body_handle(env_ptr, allegro_actor, tip_name)
+            for tip_name in right_thumb_tip_names
         ]
         self.right_thumb_tip_handles = to_torch(
             self.right_thumb_tip_handles, dtype=torch.long, device=self.device
@@ -916,20 +924,24 @@ class DualFrankaBottle(VecTask):
 
         self.left_nonthumb_tip_handles = [
             self.gym.find_actor_rigid_body_handle(env_ptr, allegro_actor, tip_name)
-            for tip_name in nonthumb_tip_names
+            for tip_name in left_nonthumb_tip_names
         ]
         self.left_nonthumb_tip_handles = to_torch(
             self.left_nonthumb_tip_handles, dtype=torch.long, device=self.device
         )
         self.right_nonthumb_tip_handles = [
-            self.gym.find_actor_rigid_body_handle(
-                env_ptr, allegro_actor, tip_name + "_r"
-            )
-            for tip_name in nonthumb_tip_names
+            self.gym.find_actor_rigid_body_handle(env_ptr, allegro_actor, tip_name)
+            for tip_name in right_nonthumb_tip_names
         ]
         self.right_nonthumb_tip_handles = to_torch(
             self.right_nonthumb_tip_handles, dtype=torch.long, device=self.device
         )
+        print("Left Tip Handles: ", self.left_tip_handles)
+        print("Right Tip Handles: ", self.right_tip_handles)
+        print("Left Thumb Tip Handles: ", self.left_thumb_tip_handles)
+        print("Right Thumb Tip Handles: ", self.right_thumb_tip_handles)
+        print("Left Non-Thumb Tip Handles: ", self.left_nonthumb_tip_handles)
+        print("Right Non-Thumb Tip Handles: ", self.right_nonthumb_tip_handles)
 
         self.env_physics_setup = to_torch(
             self.env_physics_setup, dtype=torch.float, device=self.device
@@ -975,7 +987,7 @@ class DualFrankaBottle(VecTask):
         self.cube_shape_id = to_torch(
             self.cube_shape_id, dtype=torch.long, device=self.device
         )
-        self.cube_shape_id = F.one_hot(self.cube_shape_id, num_classes=self.num_objects)
+        self.cube_shape_id = F.one_hot(self.cube_shape_id, num_classes=self.num_objects)       # COMMENT OUT to avoid pytorch error locally
 
         # Set handles
         self.cube_handle = cube_actor  # this is the local handle idx in one env. not the global one. Global one should be determined by get_actor_index()
@@ -989,6 +1001,8 @@ class DualFrankaBottle(VecTask):
             )
             for finger_name in hand_qpos_default_dict
         ]
+        print("Hand Default QPos Info (from twist.py dict definition): ", self.hand_default_qpos_info)
+        print("Length of above list: ", len(self.hand_default_qpos_info))
         # [print(finger_name, self.gym.find_actor_dof_handle(env_ptr, allegro_right_actor, finger_name)) for finger_name in right_hand_qpos_default_dict]
 
         self.hand_indices = to_torch(
@@ -1001,12 +1015,21 @@ class DualFrankaBottle(VecTask):
         # Setup data
         self.init_data()
 
+        print("--------------------------------------------------------------------------------------")
+        print("                          Finished _create_envs() function")
+        print("--------------------------------------------------------------------------------------")
+
     def init_data(self):
         self.handles = {}
 
-        # get total DOFs
-        self.num_dofs = self.gym.get_sim_dof_count(self.sim) // self.num_envs
+        # get total DOFs (12 base + 32 hand + 14 arm + 2 bottle)
+        self.num_dofs_with_base = self.gym.get_sim_dof_count(self.sim) // self.num_envs
+        self.num_dofs = self.num_dofs_with_base - self.num_base_dofs
 
+        print("Num DOFs with base: ", self.num_dofs_with_base)
+        print("Num DOFs (arms + hands + bottle): ", self.num_dofs)
+
+        # COMMENT OUT to avoid pytorch error locally
         self.prev_targets = torch.zeros(
             (self.num_envs, self.total_hand_dof), dtype=torch.float, device=self.device
         )
@@ -1040,19 +1063,14 @@ class DualFrankaBottle(VecTask):
         self.all_dof_pos = self._dof_state.view(self.num_envs, -1, 2)[..., 0]
         self.all_dof_vel = self._dof_state.view(self.num_envs, -1, 2)[..., 1]
 
-        # 46 dof, 2x16 hand + 2x6 arm
-        self.hand_dof_state = self._dof_state.view(self.num_envs, -1, 2)[
-            :,
-            self.allegro_dof_handles,
-        ]
+        # 48 dof, 2x16 hand + 2x7 arm + 2 bottle
+        self.hand_dof_state = self._dof_state.view(self.num_envs, -1, 2)[:, self.allegro_dof_handles]
         self.hand_dof_pos = self.hand_dof_state[..., 0]
         self.hand_dof_vel = self.hand_dof_state[..., 1]
 
-        self.ur_dof_state = self._dof_state.view(self.num_envs, -1, 2)[
-            :, self.ur_dof_handles
-        ]
-        self.ur_dof_pos = self.ur_dof_state[..., 0]
-        self.ur_dof_vel = self.ur_dof_state[..., 1]
+        self.franka_dof_state = self._dof_state.view(self.num_envs, -1, 2)[:, self.franka_dof_handles]
+        self.franka_dof_pos = self.franka_dof_state[..., 0]
+        self.franka_dof_vel = self.franka_dof_state[..., 1]
 
         # initialize prev cube states.
         self.prev_cube_state = self._env_root_state[:, self.cube_handle, :].clone()
@@ -1225,7 +1243,7 @@ class DualFrankaBottle(VecTask):
         # reset hand dof.
         pos = self.hand_default_dof_pos.unsqueeze(0)
         self.hand_dof_pos[env_ids, :] = pos.clone()
-        self.ur_dof_pos[env_ids] = self.ur_default_dof_pos[None]
+        self.franka_dof_pos[env_ids] = self.franka_default_dof_pos[None]
 
         # only randomize hand, fix arm
         self.hand_dof_pos[env_ids] = self.randomizer.randomize_hand_init_qpos(
@@ -1276,16 +1294,15 @@ class DualFrankaBottle(VecTask):
 
         reset_hand_indices = self.hand_indices[env_ids].to(torch.int32).reshape(-1)
         reset_actor_indices = torch.cat((reset_hand_indices, reset_object_indices))
-        self._dof_state.view(self.num_envs, -1, 2)[
-            :, self.ur_dof_handles, 0
-        ] = self.ur_default_dof_pos[None]
-        self._dof_state.view(self.num_envs, -1, 2)[:, self.ur_dof_handles, 1] = 0
-        self._dof_state.view(self.num_envs, -1, 2)[
-            :, self.allegro_dof_handles, 0
-        ] = self.hand_dof_pos.clone()
-        self._dof_state.view(self.num_envs, -1, 2)[
-            :, self.allegro_dof_handles, 1
-        ] = self.hand_dof_vel.clone()
+
+        # reset franka DOFs: pos, vel
+        self._dof_state.view(self.num_envs, -1, 2)[:, self.franka_dof_handles, 0] = self.franka_default_dof_pos[None]
+        self._dof_state.view(self.num_envs, -1, 2)[:, self.franka_dof_handles, 1] = 0
+
+        # reset hand DOFs: pos, vel
+        self._dof_state.view(self.num_envs, -1, 2)[:, self.allegro_dof_handles, 0] = self.hand_dof_pos.clone()
+        self._dof_state.view(self.num_envs, -1, 2)[:, self.allegro_dof_handles, 1] = self.hand_dof_vel.clone()
+
         # Reset the hands' dof and cube's dof jointly.
         self.gym.set_dof_state_tensor_indexed(
             self.sim,
@@ -1306,7 +1323,7 @@ class DualFrankaBottle(VecTask):
         self.prev_targets[env_ids, :] = pos
         self.cur_targets[env_ids, :] = pos
 
-        # Rest cube state recorder
+        # Reset cube state recorder
         self.prev_cube_state[env_ids, ...] = self._env_root_state[
             env_ids, self.cube_handle, :
         ].clone()
@@ -1451,13 +1468,13 @@ class DualFrankaBottle(VecTask):
         self.gym.set_dof_actuation_force_tensor(
             self.sim, gymtorch.unwrap_tensor(torques)
         )
-        ur_target = torch.zeros(
+        franka_target = torch.zeros(
             self.num_envs, self.num_dofs, device=self.cur_targets.device
         )
-        ur_target[:, self.ur_dof_handles] = self.ur_default_dof_pos[None]
-        ur_target[:, self.allegro_dof_handles] = 0
+        franka_target[:, self.franka_dof_handles] = self.franka_default_dof_pos[None]
+        franka_target[:, self.allegro_dof_handles] = 0
         self.gym.set_dof_position_target_tensor(
-            self.sim, gymtorch.unwrap_tensor(ur_target)
+            self.sim, gymtorch.unwrap_tensor(franka_target)
         )
 
     def post_physics_step(self):
