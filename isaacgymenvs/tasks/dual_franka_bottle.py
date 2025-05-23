@@ -209,8 +209,7 @@ class DualFrankaBottle(VecTask):
         # Values to be filled in at runtime
         self.states = {}  # will be dict filled with relevant states to use for reward calculation
         self.handles = {}  # will be dict mapping names to relevant sim handles
-        self.num_dofs_with_base = None  # Total number of DOFs per env
-        self.num_dofs = None  # Total number of ACTUATED DOFs per env
+        self.num_dofs = None  # Total number of DOFs per env
         self.actions = None  # Current actions to be deployed
         self._init_cube_state = None  # Initial state of cube for the current env
         self.cube_id = None  # Actor ID corresponding to cube for a given env
@@ -883,6 +882,8 @@ class DualFrankaBottle(VecTask):
         self.cube_joint_id = self.gym.find_actor_dof_handle(
             env_ptr, cube_actor, "b_joint"
         )
+        print("Brake Joint ID: ", self.brake_joint_id)
+        print("Cube Joint ID: ", self.cube_joint_id)
 
         left_tip_names = ["link_l15.0_tip", "link_l7.0_tip", "link_l11.0_tip", "link_l3.0_tip"]
         left_nonthumb_tip_names = ["link_l7.0_tip", "link_l11.0_tip", "link_l3.0_tip"]
@@ -1023,11 +1024,9 @@ class DualFrankaBottle(VecTask):
         self.handles = {}
 
         # get total DOFs (12 base + 32 hand + 14 arm + 2 bottle)
-        self.num_dofs_with_base = self.gym.get_sim_dof_count(self.sim) // self.num_envs
-        self.num_dofs = self.num_dofs_with_base - self.num_base_dofs
+        self.num_dofs = self.gym.get_sim_dof_count(self.sim) // self.num_envs
 
-        print("Num DOFs with base: ", self.num_dofs_with_base)
-        print("Num DOFs (arms + hands + bottle): ", self.num_dofs)
+        print("Num DOFs = base(12) + arms(14) + hands(32) + bottle(2) =", self.num_dofs)
 
         # COMMENT OUT to avoid pytorch error locally
         self.prev_targets = torch.zeros(
