@@ -238,7 +238,7 @@ class DualFrankaBottle(VecTask):
             print(f"Initalizer: {self.initializer_name}")
 
         # Import the initializer
-        initializer_name = f"isaacgymenvs.tasks.initializer.{self.initializer_name}"
+        initializer_name = f"isaacgymenvs.tasks.initializer.{self.initializer_name}_franka"
         initializer_module = importlib.import_module(initializer_name)
         initializer_function_builder = getattr(initializer_module, "build")
         self.initializer = initializer_function_builder(

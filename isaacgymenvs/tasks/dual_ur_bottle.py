@@ -237,7 +237,7 @@ class DualURBottle(VecTask):
             print(f"Initalizer: {self.initializer_name}")
 
         # Import the initializer
-        initializer_name = f"isaacgymenvs.tasks.initializer.{self.initializer_name}"
+        initializer_name = f"isaacgymenvs.tasks.initializer.{self.initializer_name}_ur"
         initializer_module = importlib.import_module(initializer_name)
         initializer_function_builder = getattr(initializer_module, "build")
         self.initializer = initializer_function_builder(

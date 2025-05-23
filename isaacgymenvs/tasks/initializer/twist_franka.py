@@ -7,12 +7,14 @@ from isaacgymenvs.tasks.initializer.base import EnvInitializer, Pose
 import math
 
 
-class Jan8EnvInitializer(EnvInitializer):
+class FrankaEnvInitializer(EnvInitializer):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+
         print("="*50)
-        print("Jan8EnvInitializer")
+        print("FrankaEnvInitializer")
         print("="*50)
+
         # Hand QPos
         self.cfg = kwargs.get("cfg")
         left_hand_init_qpos = {
@@ -73,25 +75,6 @@ class Jan8EnvInitializer(EnvInitializer):
         ).post_multiply_euler("z", [-90])
         
         return
-
-    def get_ur_base_init_pos(self):
-        # TODO: get base init pos by solving IK from wrist init pose
-        return [
-            # 830
-            -1.567662541066305,
-            -2.4176141224303187,
-            -1.470444917678833,
-            -0.8341446679881592,
-            0.894737720489502,
-            0.08133087307214737,
-            # 828
-            -4.674656931553976,
-            -0.6805991691401978,
-            1.5093582312213343,
-            -2.377801080743307,
-            -0.8824575583087366,
-            -0.06327754655946904,
-        ]
     
     def get_franka_base_init_pos(self):
 
@@ -133,4 +116,4 @@ class Jan8EnvInitializer(EnvInitializer):
 
 
 def build(**kwargs):
-    return Jan8EnvInitializer(**kwargs)
+    return FrankaEnvInitializer(**kwargs)
