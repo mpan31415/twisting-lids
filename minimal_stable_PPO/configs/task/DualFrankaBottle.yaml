@@ -131,7 +131,7 @@ env:
     bottle_episode_additive_noise_scale: 0.0
     bottle_episode_affine_noise_scale: 0.0
 
-  use_real_allegro_limit: True
+  use_real_allegro_limit: False
 
   # Reward Setup
   rewarder: twist

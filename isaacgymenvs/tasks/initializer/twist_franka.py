@@ -18,22 +18,22 @@ class FrankaEnvInitializer(EnvInitializer):
         # Hand QPos
         self.cfg = kwargs.get("cfg")
         left_hand_init_qpos = {
-            # left ring finger
-            "joint_l__0.0": -0.008,
-            "joint_l_1.0": 0.9478,
-            "joint_l_2.0": 0.6420,
-            "joint_l_3.0": -0.0330,
             # left thumb
-            "joint_l_12.0": 0.667,  # 0.600,
-            "joint_l_13.0": 1.167,  # 1.1630,
-            "joint_l_14.0": 0.75,  # 1.000,
-            "joint_l_15.0": 0.45,  # 0.480,
+            "joint_l__0.0": 0.667,
+            "joint_l_1.0": 1.167,
+            "joint_l_2.0": 0.75,
+            "joint_l_3.0": 0.45,
             # left middle finger
-            "joint_l_4.0": 0.0530,
-            "joint_l_5.0": 0.7163,
-            "joint_l_6.0": 0.9606,
-            "joint_l_7.0": 0.0000,
+            "joint_l_12.0": 0.0530,  # 0.600,
+            "joint_l_13.0": 0.7163,  # 1.1630,
+            "joint_l_14.0": 0.9606,  # 1.000,
+            "joint_l_15.0": 0.0000,  # 0.480,
             # left index finger
+            "joint_l_4.0": -0.008,
+            "joint_l_5.0": 0.9478,
+            "joint_l_6.0": 0.6420,
+            "joint_l_7.0": -0.0330,
+            # left ring finger
             "joint_l_8.0": 0.0000,
             "joint_l_9.0": 0.7811,
             "joint_l_10.0": 0.7868,
@@ -66,35 +66,33 @@ class FrankaEnvInitializer(EnvInitializer):
         self.dof_velocity = 1.0
 
         # Pose [px, py, pz, qx, qy, qz, qw]
-        # MY TODO: adjust the hand base init pose accordingly
-        self.hand_base_init_pose = Pose([-0.29, -0.02, 0.47], [0, 0, -0.7071068, 0.7071068]).post_multiply_euler("z", [90])
-
-        # MY TODO: adjut the cube init pose accordingly
+        self.hand_base_init_pose = Pose([-0.29, -0.01, 0.47], [0, 0, -0.7071068, 0.7071068]).post_multiply_euler("z", [90])
+        
         self.cube_base_init_pose = Pose(
             # [0.70, -0.03, 1.24], [0, -0.7071068, 0, 0.7071068]
-            [0.65, -0.03, 1.26], [0, -0.7071068, 0, 0.7071068]
-        ).post_multiply_euler("z", [-90])
+            [0.66, 0.03, 1.21], [0, -0.7071068, 0, 0.7071068]
+        ).post_multiply_euler("z", [80])
         
         return
     
     def get_franka_base_init_pos(self):
 
         # TODO: fine-tune this accordingly
-        left_franka_init_qpos = [math.pi/16, 
+        left_franka_init_qpos = [math.pi/16 + math.pi/32, 
                                     math.pi/9, 
                                     0.0, 
-                                    -9*math.pi/16, 
+                                    -9*math.pi/16 - math.pi/128, 
                                     -3*math.pi/16 + math.pi/2, 
                                     5*math.pi/8 + math.pi/64, 
-                                    -math.pi
+                                    -math.pi + 1*math.pi/16
                                     ]
         right_franka_init_qpos = [-math.pi/16, 
-                                    math.pi/9, 
-                                    0.0, 
-                                    -9*math.pi/16, 
+                                    math.pi/9 + math.pi/64, 
+                                    0.0 - math.pi/64, 
+                                    -9*math.pi/16 - math.pi/128, 
                                     3*math.pi/16 - math.pi/2, 
-                                    5*math.pi/8 - math.pi/64, 
-                                    -math.pi/2
+                                    5*math.pi/8 - math.pi/64 + math.pi/32, 
+                                    -math.pi/2 + math.pi/16 - math.pi/32
                                     ]
 
         return left_franka_init_qpos + right_franka_init_qpos

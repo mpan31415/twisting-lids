@@ -729,7 +729,7 @@ class DualFrankaBottle(VecTask):
         )
 
         # COMMENT OUT to avoid pytorch error locally (this is also UNUSED?)
-        # self.allegro_dof_speed_scales = torch.ones_like(self.hand_dof_lower_limits)
+        self.allegro_dof_speed_scales = torch.ones_like(self.hand_dof_lower_limits)
 
         allegro_start_pose = (
             self.initializer.get_hand_base_init_pose().to_isaacgym_pose()
