@@ -69,13 +69,13 @@ env:
     hand_init_qpos_noise_scale: 0.05
 
     # Initialization noises
-    object_init_pos_noise_x_scale: 0.02
-    object_init_pos_noise_y_scale: 0.02
-    object_init_pos_noise_z_scale: 0.005
+    object_init_pos_noise_x_scale: 0.00    # 0.02
+    object_init_pos_noise_y_scale: 0.00    # 0.02
+    object_init_pos_noise_z_scale: 0.000   # 0.005
 
-    object_init_quat_noise_x_scale: 0.0  # This is the rotation angle scale around x axis.
-    object_init_quat_noise_y_scale: 0.04  # This is the rotation angle scale around x axis.
-    object_init_quat_noise_z_scale: 0.75  # This is the rotation angle scale around z axis.
+    object_init_quat_noise_x_scale: 0.0    # 0.0
+    object_init_quat_noise_y_scale: 0.00   # 0.04
+    object_init_quat_noise_z_scale: 0.00   # 0.75
 
     cube_pos_noise_scale: 0.02 # TODO(): Legacy?
     cap_pos_noise_scale: 0.02 # TODO(): Legacy?
