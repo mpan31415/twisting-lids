@@ -42,8 +42,13 @@ def xyzw_to_wxyz(quat):
     return new_quat
 
 
-class RewardFunction(BaseRewardFunction):
+class FrankaRewardFunction(BaseRewardFunction):
     def __init__(self, **kwargs) -> None:
+        
+        print("=" * 50)
+        print("FrankaRewardFunction")
+        print("=" * 50)
+
         super().__init__(**kwargs)
         self.rot_score = torch.zeros((self.num_envs,)).to(self.device)
         self.z_score = torch.zeros((self.num_envs,)).to(self.device)
@@ -201,9 +206,9 @@ class RewardFunction(BaseRewardFunction):
         )  # [B, 3, 3]
         z_axis = cube_rotation_matrix[:, :, 2]  # [B, 3]
 
-        # Point to the right.
+        # Point to the left (negative y-axis).
         target_vector = (
-            torch.FloatTensor([0.0, 1.0, 0.0])
+            torch.FloatTensor([0.0, -1.0, 0.0])
             .to(self.device)
             .reshape(-1, 3)
             .repeat(z_axis.size(0), 1)
@@ -279,4 +284,4 @@ class RewardFunction(BaseRewardFunction):
 
 
 def build(**kwargs):
-    return RewardFunction(**kwargs)
+    return FrankaRewardFunction(**kwargs)

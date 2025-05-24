@@ -159,7 +159,7 @@ class DualURBottle(VecTask):
 
         # Import the reward function
         self.rewarder_name = self.cfg["env"]["rewarder"]
-        reward_module_name = f"isaacgymenvs.tasks.rewarder.{self.rewarder_name}"
+        reward_module_name = f"isaacgymenvs.tasks.rewarder.{self.rewarder_name}_ur"
         reward_module = importlib.import_module(reward_module_name)
         reward_function_builder = getattr(reward_module, "build")
         # build a pseudo reward function
