@@ -59,7 +59,7 @@ env:
   controller:
     actionEMA: 0.75
     controllerActionScale: 0.1
-    kp: 3.0
+    kp: 1.0
     kd: 0.1
 
   # Randomization Setup
@@ -154,7 +154,7 @@ env:
     grasp_reward_freq: 5  # unused
 
     pose_diff_penalty_scale: 0.0  # 0.3 from HORA
-    drop_threshold: 0.4  # 1.15
+    drop_threshold: 1.1  # [0.4, 1.15]
 
     angle_penalty_scale: 20.0
     hand_init_pose_penalty: 0.0

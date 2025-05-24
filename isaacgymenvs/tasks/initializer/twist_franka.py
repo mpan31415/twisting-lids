@@ -20,45 +20,45 @@ class FrankaEnvInitializer(EnvInitializer):
         left_hand_init_qpos = {
             # left thumb
             "joint_l__0.0": 0.667,
-            "joint_l_1.0": 1.167,
+            "joint_l_1.0": 1.167 + 0.2,
             "joint_l_2.0": 0.75,
-            "joint_l_3.0": 0.45,
+            "joint_l_3.0": 0.45 + 0.2,
             # left middle finger
             "joint_l_12.0": 0.0530,  # 0.600,
-            "joint_l_13.0": 0.7163,  # 1.1630,
-            "joint_l_14.0": 0.9606,  # 1.000,
+            "joint_l_13.0": 0.7163 - 0.5,  # 1.1630,
+            "joint_l_14.0": 0.9606 + 0.1,  # 1.000,
             "joint_l_15.0": 0.0000,  # 0.480,
             # left index finger
             "joint_l_4.0": -0.008,
-            "joint_l_5.0": 0.9478,
-            "joint_l_6.0": 0.6420,
+            "joint_l_5.0": 0.9478 - 0.5,
+            "joint_l_6.0": 0.6420 + 0.1,
             "joint_l_7.0": -0.0330,
             # left ring finger
             "joint_l_8.0": 0.0000,
-            "joint_l_9.0": 0.7811,
-            "joint_l_10.0": 0.7868,
+            "joint_l_9.0": 0.7811 - 0.5,
+            "joint_l_10.0": 0.7868 + 0.1,
             "joint_l_11.0": 0.3454,
         }
         right_hand_init_qpos = {
             # right index finger
             "joint_0.0": -0.008,
-            "joint_1.0": 0.9478,
-            "joint_2.0": 0.6420,
+            "joint_1.0": 0.9478 - 0.5,
+            "joint_2.0": 0.6420 + 0.2,
             "joint_3.0": -0.0330,
             # right thumb
             "joint_12.0": 0.667,  # 0.600,
-            "joint_13.0": 1.167,  # 1.1630,
+            "joint_13.0": 1.167 - 0.2,  # 1.1630,
             "joint_14.0": 0.75,  # 1.000,
-            "joint_15.0": 0.45,  # 0.480,
+            "joint_15.0": 0.45 + 0.2,  # 0.480,
             # right middle finger
             "joint_4.0": 0.0530,
-            "joint_5.0": 0.7163,
-            "joint_6.0": 0.9606,
+            "joint_5.0": 0.7163 - 0.5,
+            "joint_6.0": 0.9606 + 0.2,
             "joint_7.0": 0.0000,
             # right ring finger
             "joint_8.0": 0.0000,
-            "joint_9.0": 0.7811,
-            "joint_10.0": 0.7868,
+            "joint_9.0": 0.7811 - 0.5,
+            "joint_10.0": 0.7868 + 0.2,
             "joint_11.0": 0.3454,
         }
         self.hand_init_qpos = {**left_hand_init_qpos, **right_hand_init_qpos}
@@ -70,7 +70,7 @@ class FrankaEnvInitializer(EnvInitializer):
         
         self.cube_base_init_pose = Pose(
             # [0.70, -0.03, 1.24], [0, -0.7071068, 0, 0.7071068]
-            [0.66, 0.03, 1.21], [0, -0.7071068, 0, 0.7071068]
+            [0.67, 0.05, 1.16], [0, -0.7071068, 0, 0.7071068]
         ).post_multiply_euler("z", [80])
         
         return
@@ -87,11 +87,11 @@ class FrankaEnvInitializer(EnvInitializer):
                                     -math.pi + 1*math.pi/16
                                     ]
         right_franka_init_qpos = [-math.pi/16, 
-                                    math.pi/9 + math.pi/64, 
+                                    math.pi/9 + math.pi/32, 
                                     0.0 - math.pi/64, 
                                     -9*math.pi/16 - math.pi/128, 
                                     3*math.pi/16 - math.pi/2, 
-                                    5*math.pi/8 - math.pi/64 + math.pi/32, 
+                                    5*math.pi/8 + math.pi/32, 
                                     -math.pi/2 + math.pi/16 - math.pi/32
                                     ]
 

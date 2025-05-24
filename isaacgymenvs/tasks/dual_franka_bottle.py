@@ -886,8 +886,8 @@ class DualFrankaBottle(VecTask):
         print("Cube Joint ID: ", self.cube_joint_id)
 
         left_tip_names = ["link_l15.0_tip", "link_l7.0_tip", "link_l11.0_tip", "link_l3.0_tip"]
-        left_nonthumb_tip_names = ["link_l7.0_tip", "link_l11.0_tip", "link_l3.0_tip"]
-        left_thumb_tip_names = ["link_l15.0_tip"]
+        left_nonthumb_tip_names = ["link_l7.0_tip", "link_l11.0_tip", "link_l15.0_tip"]
+        left_thumb_tip_names = ["link_l3.0_tip"]
 
         right_tip_names = ["link_3.0_tip", "link_15.0_tip", "link_7.0_tip", "link_11.0_tip"]
         right_nonthumb_tip_names = ["link_3.0_tip", "link_7.0_tip", "link_11.0_tip"]
