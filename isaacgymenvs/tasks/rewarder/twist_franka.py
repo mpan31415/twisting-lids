@@ -214,8 +214,11 @@ class FrankaRewardFunction(BaseRewardFunction):
             .repeat(z_axis.size(0), 1)
         )
         angle_difference = torch.arccos(torch.sum(z_axis * target_vector, dim=-1))
-        angle_penalty = -torch.clamp(angle_difference, 0.0, 1.0)
+        angle_difference = torch.nan_to_num(
+            angle_difference, nan=0.0, posinf=1.0, neginf=-1.0
+        )
         # print(angle_difference)
+        angle_penalty = -torch.clamp(angle_difference, 0.0, 1.0)
         info_dict["cube_z_angle_difference"] = angle_difference
 
         z_score_update_idx = torch.where(progress_buf > 100)

@@ -1169,8 +1169,8 @@ class DualFrankaBottle(VecTask):
 
         frame_obs_buf = torch.cat((frame_obs_buf, cube_id_obs), dim=-1)
 
-        if torch.isnan(frame_obs_buf).int().sum() > 0:
-            print("Nan Detected in IsaacGym simulation.")
+        # if torch.isnan(frame_obs_buf).int().sum() > 0:
+        #     print("Nan Detected in IsaacGym simulation.")
 
         frame_obs_buf = torch.nan_to_num(
             frame_obs_buf, nan=0.0, posinf=1.0, neginf=-1.0
