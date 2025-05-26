@@ -1,7 +1,5 @@
 *.pyc
 *.egg-info
 
-/assets/urdf/franka_description_tmr/
-
 /minimal_stable_PPO/outputs/
 /minimal_stable_PPO/wandb/

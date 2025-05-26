@@ -46,8 +46,7 @@ env:
   cube_scale: 1.0
   brake_torque: -0.3
   right_hand_only: False
-  use_mirrored_urdf: False  # for backward compatibility / debug
-  use_updated_urdf: True  # for backward compatibility / debug
+  use_simplified_urdf: True  # for backward compatibility / debug
 
   # Initialization Setup
   initializer: twist

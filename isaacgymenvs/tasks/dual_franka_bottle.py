@@ -230,12 +230,12 @@ class DualFrankaBottle(VecTask):
         self.dt = 1 / 60.0
         self.torque_control = True
 
-        self.use_mirrored_urdf = self.cfg["env"]["use_mirrored_urdf"]
-        self.use_updated_urdf = self.cfg["env"]["use_updated_urdf"]
+        self.use_simplified_urdf = self.cfg["env"]["use_simplified_urdf"]
         self.initializer_name = self.cfg["env"]["initializer"]
-        if self.use_mirrored_urdf:
-            print("Using Mirrored URDF.")
-            print(f"Initalizer: {self.initializer_name}")
+
+        print(f"Initalizer: {self.initializer_name}")
+        if self.use_simplified_urdf:
+            print("Using Simplified URDF.")
 
         # Import the initializer
         initializer_name = f"isaacgymenvs.tasks.initializer.{self.initializer_name}_franka"
@@ -589,12 +589,10 @@ class DualFrankaBottle(VecTask):
             os.path.dirname(os.path.abspath(__file__)), "../../assets"
         )
 
-        if self.use_mirrored_urdf:
-            asset_file = "urdf/ur5e_allegro/robots/dual_ur5e_allegro.urdf"
-        elif self.use_updated_urdf:
-            asset_file = "urdf/franka_description_tmr/urdf/franka_right_digit360_simple.urdf"      # True
+        if self.use_simplified_urdf:
+            asset_file = "urdf/franka_description_tmr/urdf/franka_right_digit360_simple.urdf"
         else:
-            asset_file = "urdf/ur5e_allegro/robots/dual_ur5e_allegro_real.urdf"
+            asset_file = "urdf/franka_description_tmr/urdf/franka_right_digit360.urdf"
 
         object_asset_manager = AssetManager(
             asset_root=os.path.join(
