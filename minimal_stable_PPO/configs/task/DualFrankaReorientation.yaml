@@ -42,16 +42,20 @@ env:
   forceDecay: 0.99
   forceDecayInterval: 0.08
 
-  liftingRewScale: 20.0
-  liftingBonus: 300.0
-  liftingBonusThreshold: 0.15  # when the object is lifted this distance (in meters) above the table, the agent gets the lifting bonus
-  keypointRewScale: 200.0
-  distanceDeltaRewScale: 50.0
-  reachGoalBonus: 1000.0
-  frankaActionsPenaltyScale: 0.003
-  allegroActionsPenaltyScale: 0.0003
-  fallDistance: 0.24
-  fallPenalty: 0.0
+  # Reward Setup
+  rewarder: reorientation
+  reward_setup:
+    lifting_rew_scale: 20.0
+    lifting_bonus: 300.0
+    lifting_bonus_threshold: 0.15  # when the object is lifted this distance (in meters) above the table, the agent gets the lifting bonus
+    keypoint_rew_scale: 200.0
+    distance_delta_rew_scale: 50.0
+    reach_goal_bonus: 1000.0
+    franka_actions_penalty_scale: 0.003
+    allegro_actions_penalty_scale: 0.0003
+    fall_distance: 0.24
+    fall_penalty: 0.0
+
 
   privilegedActions: False
   privilegedActionsTorque: 0.02

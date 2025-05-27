@@ -42,11 +42,11 @@ def xyzw_to_wxyz(quat):
     return new_quat
 
 
-class FrankaRewardFunction(BaseRewardFunction):
+class FrankaTwistRewardFunction(BaseRewardFunction):
     def __init__(self, **kwargs) -> None:
         
         print("=" * 50)
-        print("FrankaRewardFunction")
+        print("FrankaTwistRewardFunction")
         print("=" * 50)
 
         super().__init__(**kwargs)
@@ -287,4 +287,4 @@ class FrankaRewardFunction(BaseRewardFunction):
 
 
 def build(**kwargs):
-    return FrankaRewardFunction(**kwargs)
+    return FrankaTwistRewardFunction(**kwargs)
